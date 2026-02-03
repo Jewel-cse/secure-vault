@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: payment-service
+  
+  # Spring Cloud Vault Configuration
+  config:
+    import: vault://
+  
+  cloud:
+    vault:
+      # Vault server connection
+      uri: http://localhost:8200
+      authentication: TOKEN
+      token: dev-root-token
+      
+      # KV v2 secrets engine configuration
+      kv:
+        enabled: true
+        backend: secret
+        default-context: payment-service
+        
+      # Fail fast if Vault is not available
+      fail-fast: true
+
+# Application port
+server:
+  port: 8080
