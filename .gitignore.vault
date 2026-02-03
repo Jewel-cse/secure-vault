@@ -1,0 +1,18 @@
+# Add Vault sensitive files to gitignore
+
+# Vault keys and tokens (CRITICAL - NEVER COMMIT!)
+vault-keys.txt
+vault-approle-credentials.txt
+*.pem
+*.key
+*.crt
+
+# Vault data directory
+vault/data/
+vault/logs/
+vault/certs/
+
+# Environment files with secrets
+.env
+.env.local
+.env.production

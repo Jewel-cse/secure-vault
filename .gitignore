@@ -31,3 +31,16 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Vault Sensitive Files (NEVER COMMIT!) ###
+vault-keys.txt
+vault-approle-credentials.txt
+*.pem
+*.key
+*.crt
+vault/data/
+vault/logs/
+vault/certs/
+.env
+.env.local
+.env.production

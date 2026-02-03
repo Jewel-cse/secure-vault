@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: payment-service
+  
+  # Spring Cloud Vault Configuration for PRODUCTION
+  config:
+    import: vault://
+  
+  cloud:
+    vault:
+      # Vault server connection
+      uri: http://localhost:8200
+      # For production with TLS: https://vault.yourdomain.com:8200
+      
+      # AppRole Authentication (PRODUCTION)
+      authentication: APPROLE
+      app-role:
+        role-id: ${VAULT_ROLE_ID}
+        secret-id: ${VAULT_SECRET_ID}
+        role: payment-service
+        app-role-path: approle
+      
+      # KV v2 secrets engine configuration
+      kv:
+        enabled: true
+        backend: secret
+        default-context: payment-service
+        
+      # Fail fast if Vault is not available
+      fail-fast: true
+      
+      # Connection timeout
+      connection-timeout: 5000
+      read-timeout: 15000
+
+# Application port
+server:
+  port: 8080
+
+# Logging configuration for production
+logging:
+  level:
+    root: INFO
+    com.rana.voult_demo: INFO
+    org.springframework.cloud.vault: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"

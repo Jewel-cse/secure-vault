@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault-prod
+    ports:
+      - "8200:8200"
+      - "8201:8201"  # Cluster port
+    volumes:
+      # Persistent storage for Vault data
+      - ./vault/data:/vault/file
+      # Configuration files
+      - ./vault/config:/vault/config
+      # Logs directory
+      - ./vault/logs:/vault/logs
+      # TLS certificates (you'll need to generate these)
+      - ./vault/certs:/vault/certs
+    environment:
+      VAULT_ADDR: 'http://0.0.0.0:8200'
+      # For production with TLS, use: https://0.0.0.0:8200
+      VAULT_API_ADDR: 'http://vault:8200'
+      VAULT_CLUSTER_ADDR: 'http://vault:8201'
+    cap_add:
+      - IPC_LOCK
+    command: server -config=/vault/config/vault.hcl
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - vault-network
+
+  # Optional: Vault UI (for management)
+  # Access at http://localhost:8200/ui
+  
+networks:
+  vault-network:
+    driver: bridge
+
+volumes:
+  vault-data:
+    driver: local
