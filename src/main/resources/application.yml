@@ -14,8 +14,8 @@ spring:
       
       # AppRole authentication
       app-role:
-        role-id: ${VAULT_ROLE_ID:6a916804-395f-6547-9df1-08acf9763928}
-        secret-id: ${VAULT_SECRET_ID:7848640d-ffa9-02c0-b9fb-08014d6667c1}
+        role-id: ${VAULT_ROLE_ID:e3563d24-4ee3-cc91-cf8c-559ee98a9b11}
+        secret-id: ${VAULT_SECRET_ID:176be433-44d2-e46b-81f4-48e345d67668}
         role: payment-service
         app-role-path: approle
       

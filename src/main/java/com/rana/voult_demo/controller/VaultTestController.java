@@ -76,34 +76,6 @@ public class VaultTestController {
         }
     }
 
-    /**
-     * Get database configuration from Vault
-     * GET http://localhost:8080/api/vault/database-config
-     * 
-     * Note: Password is masked for security
-     */
-    @GetMapping("/database-config")
-    public ResponseEntity<Map<String, Object>> getDatabaseConfig() {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            response.put("status", "success");
-            response.put("source", "HashiCorp Vault");
-            response.put("config", Map.of(
-                    "username", databaseConfig.getUsername() != null ? databaseConfig.getUsername() : "NOT_LOADED",
-                    "password", databaseConfig.getPassword() != null ? "***MASKED***" : "NOT_LOADED",
-                    "host", databaseConfig.getHost() != null ? databaseConfig.getHost() : "NOT_LOADED",
-                    "port", databaseConfig.getPort() != null ? databaseConfig.getPort() : "NOT_LOADED",
-                    "database", databaseConfig.getDatabase() != null ? databaseConfig.getDatabase() : "NOT_LOADED"));
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", e.getMessage());
-
-            return ResponseEntity.status(500).body(response);
-        }
-    }
 
     /**
      * Get all secrets from a specific path (for testing)
@@ -145,25 +117,6 @@ public class VaultTestController {
         }
     }
 
-    /**
-     * Test endpoint using @Value annotation
-     * GET http://localhost:8080/api/vault/test-value
-     */
-    @GetMapping("/test-value")
-    public ResponseEntity<Map<String, Object>> testValue(
-            @Value("${database.username:NOT_SET}") String username,
-            @Value("${database.host:NOT_SET}") String host) {
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("status", "success");
-        response.put("message", "Values loaded from Vault using @Value annotation");
-        response.put("values", Map.of(
-                "username", username,
-                "host", host,
-                "password", "***MASKED***"));
-
-        return ResponseEntity.ok(response);
-    }
 
     /**
      * Get Vault connection info
