@@ -9,9 +9,15 @@ spring:
   cloud:
     vault:
       # Vault server connection
-      uri: http://localhost:8200
-      authentication: TOKEN
-      token: dev-root-token
+      uri: http://localhost:8300
+      authentication: APPROLE
+      
+      # AppRole authentication
+      app-role:
+        role-id: ${VAULT_ROLE_ID:6a916804-395f-6547-9df1-08acf9763928}
+        secret-id: ${VAULT_SECRET_ID:7848640d-ffa9-02c0-b9fb-08014d6667c1}
+        role: payment-service
+        app-role-path: approle
       
       # KV v2 secrets engine configuration
       kv:
@@ -20,8 +26,14 @@ spring:
         default-context: payment-service
         
       # Fail fast if Vault is not available
-      fail-fast: true
+      fail-fast: false
 
 # Application port
 server:
   port: 8080
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.vault: DEBUG
+    org.springframework.vault: DEBUG

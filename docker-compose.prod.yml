@@ -5,8 +5,8 @@ services:
     image: hashicorp/vault:latest
     container_name: vault-prod
     ports:
-      - "8200:8200"
-      - "8201:8201"  # Cluster port
+      - "8300:8200"
+      - "8301:8201"  # Cluster port
     volumes:
       # Persistent storage for Vault data
       - ./vault/data:/vault/file
@@ -26,7 +26,7 @@ services:
     command: server -config=/vault/config/vault.hcl
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "vault", "status"]
+      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8200/v1/sys/health?standbyok=true&sealedcode=0&uninitcode=0"]
       interval: 30s
       timeout: 10s
       retries: 5
