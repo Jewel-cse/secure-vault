@@ -50,38 +50,30 @@ path \"secret/metadata/payment-service/*\" {
 EOF"
 
 # Write the policy
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault policy write payment-service /tmp/payment-service-policy.hcl
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault policy write payment-service /tmp/payment-service-policy.hcl"
 ```
 
 ### 3. Create AppRole
 
 ```bash
 # Create the AppRole
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault write auth/approle/role/payment-service \
-    token_ttl=1h \
-    token_max_ttl=4h \
-    policies=payment-service
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault write auth/approle/role/payment-service token_ttl=1h token_max_ttl=4h policies=payment-service"
 
 # Get Role ID (this is public, can be in your application config)
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault read auth/approle/role/payment-service/role-id
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault read auth/approle/role/payment-service/role-id"
 
 # Generate Secret ID (this is private, should be securely provided to the application)
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault write -f auth/approle/role/payment-service/secret-id
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault write -f auth/approle/role/payment-service/secret-id"
 ```
 
 ### 4. Store Your Secrets
 
 ```bash
 # Enable KV v2 secrets engine (if not already enabled)
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault secrets enable -path=secret kv-v2
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault secrets enable -path=secret kv-v2"
 
 # Store database credentials
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault kv put secret/payment-service/database \
-    username=payment_user \
-    password=secure_password_123 \
-    host=localhost \
-    port=5432 \
-    database=payment_db
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault kv put secret/payment-service/database username=payment_user password=secure_password_123 host=localhost port=5432 database=payment_db"
 
 # Store API keys
 docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault kv put secret/payment-service/api-keys \
@@ -93,7 +85,7 @@ docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod
 
 ```bash
 # Enable file-based audit logging
-docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod vault audit enable file file_path=/vault/logs/audit.log
+docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=myroot vault-prod sh -c "vault audit enable file file_path=/vault/logs/audit.log"
 
 # View audit logs
 docker exec vault-prod tail -f /vault/logs/audit.log
