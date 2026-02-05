@@ -283,3 +283,9 @@ When you're ready to move to true production mode with manual unsealing:
 - Root token `myroot` should be changed in production
 - This setup provides a good balance for development and testing
 - All production features (AppRole, policies, audit) work the same way
+## Production Upgrade:
+
+- Use S3 or Raft storage backend (instead of file)
+- Implement dynamic database credentials (secrets auto-rotate every hour)
+- Enable TLS (from the previous guide)
+
