@@ -1,3 +1,5 @@
+server:
+  port: 8080
 spring:
   application:
     name: payment-service
@@ -8,35 +10,40 @@ spring:
   
   cloud:
     vault:
-      # Vault server connection
-      uri: http://localhost:8200
-      # For production with TLS: https://vault.yourdomain.com:8200
+      # Vault server connection (HTTPS for production)
+      uri: ${VAULT_ADDR:https://localhost:443}
+      
+      # SSL/TLS Configuration
+      ssl:
+        trust-store: ${VAULT_TLS_CA_FILE:classpath:vault-ca.pem}
+        trust-store-type: PEM
       
       # AppRole Authentication (PRODUCTION)
       authentication: APPROLE
       app-role:
         role-id: ${VAULT_ROLE_ID}
         secret-id: ${VAULT_SECRET_ID}
-        role: payment-service
+        role: ${VAULT_CLIENT_NAME:payment-service}
         app-role-path: approle
       
       # KV v2 secrets engine configuration
       kv:
         enabled: true
         backend: secret
-        default-context: payment-service
+        default-context: ${VAULT_CLIENT_NAME:payment-service}
+        application-name: ${VAULT_CLIENT_NAME:payment-service}
         
       # Fail fast if Vault is not available
       fail-fast: true
       
-      # Connection timeout
+      # Connection settings
       connection-timeout: 5000
       read-timeout: 15000
-
-# Application port
-server:
-  port: 8080
-
+      
+      # Token renewal
+      token:
+        renew: true
+        ttl: 3600000  # 1 hour
 # Logging configuration for production
 logging:
   level:

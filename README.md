@@ -6,13 +6,6 @@
 - **docker-compose.yml** - Dev mode Vault (in-memory, auto-unsealed)
 - **application.yml** - Dev config (TOKEN authentication)
 
-### Production
-- **docker-compose.prod.yml** - Production Vault (persistent storage)
-- **application-prod.yml** - Production config (AppRole authentication)
-- **vault/config/vault.hcl** - Vault server configuration
-- **vault/policies/payment-service-policy.hcl** - Access control policy
-- **.env.example** - Environment variables template
-
 ## Scripts
 - **vault/scripts/init-vault.sh** - Linux/Mac initialization script
 - **vault/scripts/init-vault.bat** - Windows initialization script
@@ -46,5 +39,3 @@ mvn spring-boot:run -Dspring.profiles.active=prod
 ```
 
 ---
-
-See [VAULT_SETUP.md](VAULT_SETUP.md) for development and [PRODUCTION_SETUP.md](PRODUCTION_SETUP.md) for production.

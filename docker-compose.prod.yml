@@ -1,46 +1,171 @@
 version: '3.8'
 
 services:
-  vault:
-    image: hashicorp/vault:latest
-    container_name: vault-prod
+  # Vault Node 1 (Active)
+  vault-1:
+    image: hashicorp/vault:1.15
+    container_name: vault-prod-1
+    hostname: vault-1
+    restart: unless-stopped
     ports:
-      - "8300:8200"
-      - "8301:8201"  # Cluster port
-    volumes:
-      # Persistent storage for Vault data
-      - ./vault/data:/vault/file
-      # Configuration files
-      - ./vault/config:/vault/config
-      # Logs directory
-      - ./vault/logs:/vault/logs
-      # TLS certificates (you'll need to generate these)
-      - ./vault/certs:/vault/certs
+      - "8200:8200"
     environment:
-      VAULT_ADDR: 'http://0.0.0.0:8200'
-      # For production with TLS, use: https://0.0.0.0:8200
-      VAULT_API_ADDR: 'http://vault:8200'
-      VAULT_CLUSTER_ADDR: 'http://vault:8201'
+      VAULT_ADDR: 'https://0.0.0.0:8200'
+      VAULT_API_ADDR: 'https://vault-1:8200'
+      VAULT_CLUSTER_ADDR: 'https://vault-1:8201'
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - ./vault/config/vault-prod.hcl:/vault/config/vault.hcl:ro
+      - ./vault/certs:/vault/certs:ro
+      - ./vault/logs:/vault/logs
+      - ./vault/policies:/vault/policies:ro
     cap_add:
       - IPC_LOCK
-    command: server -config=/vault/config/vault.hcl
-    restart: unless-stopped
+    command: server
+    networks:
+      - vault-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "--quiet", "http://localhost:8200/v1/sys/health?standbyok=true&sealedcode=0&uninitcode=0"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost:8200/v1/sys/health"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 3
+      start_period: 60s
+
+  # Vault Node 2 (Standby)
+  vault-2:
+    image: hashicorp/vault:1.15
+    container_name: vault-prod-2
+    hostname: vault-2
+    restart: unless-stopped
+    ports:
+      - "8201:8200"
+    environment:
+      VAULT_ADDR: 'https://0.0.0.0:8200'
+      VAULT_API_ADDR: 'https://vault-2:8200'
+      VAULT_CLUSTER_ADDR: 'https://vault-2:8201'
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - ./vault/config/vault-prod.hcl:/vault/config/vault.hcl:ro
+      - ./vault/certs:/vault/certs:ro
+      - ./vault/logs:/vault/logs
+      - ./vault/policies:/vault/policies:ro
+    cap_add:
+      - IPC_LOCK
+    command: server
+    networks:
+      - vault-network
+    depends_on:
+      - vault-1
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Vault Node 3 (Standby)
+  vault-3:
+    image: hashicorp/vault:1.15
+    container_name: vault-prod-3
+    hostname: vault-3
+    restart: unless-stopped
+    ports:
+      - "8202:8200"
+    environment:
+      VAULT_ADDR: 'https://0.0.0.0:8200'
+      VAULT_API_ADDR: 'https://vault-3:8200'
+      VAULT_CLUSTER_ADDR: 'https://vault-3:8201'
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_DEFAULT_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - ./vault/config/vault-prod.hcl:/vault/config/vault.hcl:ro
+      - ./vault/certs:/vault/certs:ro
+      - ./vault/logs:/vault/logs
+      - ./vault/policies:/vault/policies:ro
+    cap_add:
+      - IPC_LOCK
+    command: server
+    networks:
+      - vault-network
+    depends_on:
+      - vault-1
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "--no-check-certificate", "https://localhost:8200/v1/sys/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:alpine
+    container_name: vault-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./vault/certs:/etc/nginx/certs:ro
+    networks:
+      - vault-network
+    depends_on:
+      - vault-1
+      - vault-2
+      - vault-3
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Prometheus for Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: vault-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     networks:
       - vault-network
 
-  # Optional: Vault UI (for management)
-  # Access at http://localhost:8200/ui
-  
+  # Grafana for Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: vault-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana-datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - vault-network
+    depends_on:
+      - prometheus
+
 networks:
   vault-network:
     driver: bridge
 
 volumes:
-  vault-data:
-    driver: local
+  prometheus-data:
+  grafana-data:

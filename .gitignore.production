@@ -1,0 +1,24 @@
+# Add vault-keys files to gitignore
+vault-keys*.txt
+clients/*.txt
+backups/
+*.tar.gz
+*.tar.gz.gpg
+
+# Environment files with secrets
+.env.production
+.env.local
+.env
+
+# TLS certificates and keys
+vault/certs/*.pem
+vault/certs/*.key
+vault/certs/*.crt
+
+# Vault data and logs
+vault/data/*
+vault/logs/*
+
+# Monitoring data
+monitoring/prometheus/data/
+monitoring/grafana/data/
